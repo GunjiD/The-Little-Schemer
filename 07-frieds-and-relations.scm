@@ -9,7 +9,7 @@
   (lambda (lat)
     (cond
       ((null? lat) #t)
-      ((member? (car lat) (cdr lat)))
+      ((member? (car lat) (cdr lat)) #f)
       ((set? (cdr lat))))))
 
 (set? '(apple peaches apple plum))
@@ -198,13 +198,40 @@
 (a-pair? '(pair pair pair))
 ;result #f
 
+;ペアの表現を作るときと、ペアの表現から部分を取り出すときに使う。
+(define first
+  (lambda (p)
+    (car p)))
+(define second
+  (lambda (p)
+    (car (cdr p))))
+(define third
+  (lambda (p)
+    (car (cdr (cdr p)))))
+(define build
+  (lambda (a1 a2)
+    (cons a1
+	  (cons a2 '()))))
 
+;l は (apples peaches pumpkin pie) rel（レル）ではない。ここでレルは関係(relation)を表す
+;relの例 ((4 3) (4 2) (7 6) (6 2) (3 4))
 
+(define firsts
+  (lambda (l)
+    (cond
+      ((null? l) '())
+      (else (cons (car (car l))
+                  (firsts (cdr l)))))))
 
+(define fun?
+  (lambda (rel)
+    (set? (firsts rel))))
 
-
-
-
+;test
+(fun? '((8 3) (4 2) (7 6) (6 2) (3 4)))
+;result #t
+(fun? '((b 4) (b 0) (b 9) (e 5) (g 4)))
+;result #f
 
 
 

@@ -16,12 +16,12 @@
 		(member? a (cdr lat)))))))
 ;;remberを定義する
 (define rember
-  (lambda (a lat)
+  (lambda (s l)
     (cond
-      ((null? lat) (quote ()))
-      ((eq? (car lat) a) (cdr lat))
-      (else (cons (car lat)
-	    (rember a (cdr lat)))))))
+      ((null? l) (quote ()))
+      ((oequal? (car l) s) (cdr l))
+      (else (cons (car l)
+		  (rember s (cdr l)))))))
 ;;firstsを定義する
 ;;なぜfirsts (cdr l)なのか -> 一度に一つのS式しか見ないため。残りを見るには cdr で先頭以外の要素を取り出す必要がある
 (define firsts
@@ -319,6 +319,104 @@
 		   (insertR* new old
 			     (cdr l)))))))
 ;;(print  (insertR* 'roast 'chuck  '((how much (wood)) could ((a (wood) chuck)) (((chuck))) (if (a) ((wood chuck))) could chuck wood)))
+;;(occur* a l) aがlに何個入ってるか数える
+(define occur*
+  (lambda (a l)
+    (cond
+      ((null? l) 0)
+      ((atom? (car l))
+       (cond
+	 ((eq? (car l) a)
+	  (add1 (occur* a (cdr l))))
+	 (else (occur* a (cdr l)))))
+      (else (o+ (occur* a (car l))
+	       (occur* a (cdr l)))))))
+;;(print (occur* 'banana '((banana) (split ((((banana ice))) (cream (banana)) sherbet)) (banana) (bread) (banana brandy))))
+;;(subst* new old l) lのoldをnewに変更する
+(define subst*
+  (lambda (new old l)
+    (cond
+      ((null? l) (quote ()))
+      ((atom? (car l))
+       (cond
+	 ((eq? (car l) old)
+	  (cons new
+		(subst* new old (cdr l))))
+	 (else (cons (car l)
+		     (subst* new old (cdr l))))))
+      (else
+	(cons (subst* new old (car l))
+	      (subst* new old (cdr l)))))))
+;;(print (subst* 'orange 'banana '((banana) (split ((((banana ice))) (cream (banana)) sherbet)) (banana) (bread) (banana brandy))))
+;(eqlist? l1 l2) l1とl21が同じか調べる
+(define eqlist?
+  (lambda (l1 l2)
+    (cond
+    ((and (null? l1) (null? l2)) #t)
+    ((or (null? l1) (null? l2)) #f)
+    ((and (atom? (car l1))
+	  (atom? (car l2)))
+     (and (eqan? (car l1) (car l2))
+	  (eqlist? (cdr l1) (cdr l2))))
+    ((or (atom? (car l1))
+	 (atom? (car l2))) #f)
+    (else
+      (and (eqlist? (car l1) (car l2))
+	   (eqlist? (cdr l1) (cdr l2)))))))
+;(print (eqlist? '(strawbberry ice cream) '(strawberry cream ice)))
+;(print (eqlist? '(beef ((sausage)) (and (soda))) '(beef ((sausage)) (and (soda)))))
+;equal?は予約後なのでoequal?を定義する
+(define oequal?
+  (lambda (s1 s2)
+  (cond
+    ((and (atom? s1) (atom? s2))
+     (eqan? s1 s2))
+    ((or (atom? s1) (atom? s2)) #f)
+    (else (eqlist? s1 s2)))))
+;numberd? 算術式かどうかを検査する
+(define numberd?
+  (lambda (aexp)
+  (cond
+    ((atom? aexp) (number? aexp))
+    (else
+      (and (numberd? (car aexp))
+	   (numberd?
+	     (car (cdr (cdr aexp)))))))))
+;(value nexp) nexpが数値式または算術式の自然な値であるとする
+(define value
+  (lambda (nexp)
+  (cond
+    ((atom? nexp) nexp)
+    ((eq? (operator nexp) (quote 'o+))
+     (o+ (value (1st-sub-exp))
+	 (value (2nd-sub-exp))))
+    ((eq? (operator nexp) (quote 'x))
+     (x (value (value (1st-sub-exp)))
+	(value (value (2nd-sub-exp)))))
+    (else
+      (exponent (1st-sub-exp nexp)
+		(2nd-sub-exp nexp))))))
+(define 1st-sub-exp
+  (lambda (aexp)
+    ((car aexp))))
+(define 2nd-sub-exp
+  (lambda (aexp)
+    ((car (cdr aexp)))))
+(define operator
+  (lambda (aexp)
+    (car aexp)))
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;;(print (multiinsertR 'topping 'fudge '(ice cream with fudge topping for fudge)))
 ;;(print (no-nums '(5 pears 6 prunes 9 dates)))
