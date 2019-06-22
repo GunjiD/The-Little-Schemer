@@ -222,7 +222,7 @@
       ((null? l) '())
       (else (cons (car (car l))
                   (firsts (cdr l)))))))
-
+;有限関数か？ 各ペアの要素が全ての第一要素と一致しない
 (define fun?
   (lambda (rel)
     (set? (firsts rel))))
@@ -232,6 +232,61 @@
 ;result #t
 (fun? '((b 4) (b 0) (b 9) (e 5) (g 4)))
 ;result #f
+
+;revrel reverse rel
+#|
+(define revrel
+  (lambda (rel)
+    (cond
+      ((null? rel) '())
+      (else (cons (build
+		    (second (car rel))
+		    (first (car rel)))
+		  (revrel (cdr rel)))))))
+|#
+
+;revpair 関数を使うとどう記述できるか
+(define revpair
+  (lambda (pair)
+    (build (second pair) (first pair))))
+
+(define revrel
+  (lambda (rel)
+    (cond
+      ((null? rel) '())
+      (else (cons (revpair (car rel))
+		  (revrel(cdr rel)))))))
+
+
+;test
+(revrel '((8 a) (pumpkin pie) (got sick)))
+;result ((a 8) (pie pumpkin) (sick got))
+
+;全単射。群論を読もう！
+(define one-to-one?
+  (lambda (fun)
+    (fun? (revrel fun))))
+;test
+(one-to-one? '((grape raisin) (plum prune) (stewed prune)))
+;result  
+(one-to-one? '((chocolate chip) (doughy cookie)))
+;result 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
