@@ -76,26 +76,140 @@
 	((null? l) '())
 	((test? (car l) old)
 	 (cons new (cons old (cdr l))))
-	(cons (car l) ((insertL-f test?) new old (cdr l)))))))
+	(else (cons (car l) 
+		    ((insertL-f test?) new old
+				       (cdr l))))))))
 
-;;insertRを定義する
+(define insertR-f
+  (lambda (test?)
+    (lambda (new old l)
+      (cond
+	((null? l) '())
+	((test? (car l) old)
+	 (cons old (cons new (cdr l))))
+	(else (cons (car l)
+		    ((insertR-f test?) new old
+				       (cdr l))))))))
+#|
+;3つの引数をとり
+;第2の引数を第3の引数に cons した結果に
+;第1の引数を cons する
+;seqL
+(define seqL
+  (lambda (new old l)
+    (cons new (cons old l))))
+;seqR
+(define seqR
+  (lambda (new old l)
+    (cons old (cons new l))))
+;seq が seqL のときは insertL を返し
+;seq が seqR のときは insertR を返す
+;insert-g を定義する
+|#
+
+(define insert-g
+  (lambda (seq)
+    (lambda (new old l)
+      (cond
+	((null? l) '())
+	((eq? (car l) old)
+	 (seq new old (cdr l)))
+	(else (cons (car l)
+		    ((insert-g seq) new old
+				    (cdr l))))))))
+
+;(define insertL (insert-g seqL))
+;(define insertR (insert-g seqR))
+
+(define insertL
+  (insert-g
+    (lambda (new old l)
+      (cons new (cons old l)))))
+
 (define insertR
-  (lambda (new old lat)
+  (insert-g
+    (lambda (new old l)
+      (cons old (cons new l)))))
+
+#|
+(define subst
+  (lambda (new old l)
     (cond
-      ((null? lat) (quote ()))
-      (else (cond
-              ((eq? (car lat) old)
-               (cons old
-                (cons new (cdr lat))))
-              (else (cons (car lat)
-                          (insertR new old
-                                   (cdr lat)))))))))
+      ((null? l) '())
+      ((eq? (car l) old)
+       (cons new (cdr l)))
+      (else (cons (car l)
+		  (subst new old (cdr l)))))))
+|#
 
+(define seqS
+  (lambda (new old l)
+    (cons new l)))
 
+(define subst (insert-g seqS))
 
+(define seqrem
+  (lambda (new old l)
+    l))
 
+(define yyy
+  (lambda (a l)
+    ((insert-g seqrem) #f a l)))
+;test (yyy 'sausage '(pizza with sausage and bacon))
+;result (pizza with and bacon)
 
+;6章の value 参照
+#|
+(define value
+  (lambda (nexp)
+  (cond
+    ((atom? nexp) nexp)
+    ((eq? (operator nexp) (quote 'o+))
+     (o+ (value (1st-sub-exp))
+	 (value (2nd-sub-exp))))
+    ((eq? (operator nexp) (quote 'x))
+     (x (value (value (1st-sub-exp)))
+	(value (value (2nd-sub-exp)))))
+    (else
+      (exponent (1st-sub-exp nexp)
+		(2nd-sub-exp nexp))))))
+(define 1st-sub-exp
+  (lambda (aexp)
+    ((car aexp))))
+(define 2nd-sub-exp
+  (lambda (aexp)
+    ((car (cdr aexp)))))
+(define operator
+  (lambda (aexp)
+    (car aexp)))
+|#
 
+(define 1st-sub-exp
+  (lambda (aexp)
+    ((car aexp))))
+(define 2nd-sub-exp
+  (lambda (aexp)
+    ((car (cdr aexp)))))
+(define operator
+  (lambda (aexp)
+    (car aexp)))
+
+(define atom-to-function
+  (lambda (x)
+    (cond
+      ((eq? x (quote +)) 'o+)
+      ((eq? x (quote -)) 'o-)
+      (else exponent))))
+
+(define value
+  (lambda (nexp)
+    (cond
+      ((atom? nexp) nexp)
+      (else
+	((atom-to-function
+	   (operator nexp))
+	 (value (1st-sub-exp nexp))
+	 (value (2nd-sub-exp nexp)))))))
 
 
 
