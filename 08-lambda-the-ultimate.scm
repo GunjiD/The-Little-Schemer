@@ -201,6 +201,10 @@
       ((eq? x (quote -)) 'o-)
       (else exponent))))
 
+(define atom?
+  (lambda (x)
+  (and (not (pair? x)) (not (null? x)))))
+
 (define value
   (lambda (nexp)
     (cond
@@ -210,6 +214,112 @@
 	   (operator nexp))
 	 (value (1st-sub-exp nexp))
 	 (value (2nd-sub-exp nexp)))))))
+
+;test
+;result
+(define multirember-f
+  (lambda (test?)
+    (lambda (a lat)
+      (cond
+        ((null? lat) '())
+        ((test? (car lat) a)
+         ((multirember-f test?) a (cdr lat)))
+        (else 
+	  (cons (car lat) ((multirember-f test?) a (cdr lat))))))))
+
+;test ((multirember-f eq?) 'tuna '(shrimp salada tuna salada and tuna))
+;result (shrimp salada salada and)
+
+(define multirember-eq?
+  (multirember-f eq?))
+
+(define eq?-tuna
+  (eq?-c 'tuna))
+
+(define multiremberT
+  (lambda (test? lat)
+    (cond
+      ((null? lat) '())
+      ((test? (car lat))
+       (multiremberT test? (cdr lat)))
+      (else (cons (car lat)
+		  (multiremberT test? (cdr lat)))))))
+
+;test (multiremberT eq?-tuna '(shrimp salad tuna salad and tuna))
+;result (shrimp salad salad and)
+
+(define multirember&co
+  (lambda (a lat col)
+    (cond
+      ((null? lat)
+       (col '() '()))
+      ((eq? (car lat) a)
+       (multirember&co a (cdr lat)
+		       (lambda (newlat seen)
+			 (col newlat
+			      (cons (car lat) seen)))))
+      (else
+	(multirember&co a (cdr lat)
+			(lambda (newlat seen)
+			  (col (cons (car lat) newlat) seen)))))))
+
+(define a-fried
+  (lambda (x y)
+    (null? y)))
+
+;test
+;(multirember&co 'tuna '() a-fried)
+;#t
+;(multirember&co 'tuna '(strawberries tuna and swordfish) a-fried)
+;#f
+
+;col は collector（収集子）の短縮形。収集子は continuation（継続）とも呼ばれる
+
+#|
+(define new-fried
+  (lambda (newlat seen)
+    (col newlat
+	 (cons (car lat) seen))))
+|#
+
+;この定義を他の方法で書く
+(define new-fried
+  (lambda (newlat seen)
+    (a-fried newlat
+	 (cons 'tuna seen))))
+;質問(multirember&co 'tuna '(and tuna) a-fried)
+;#f
+
+(define latest-fried
+  (lambda (newlat seen)
+    (a-fried (cons 'and newlat) seen)))
+
+(define last-fried
+  (lambda (x y)
+    (length x)))
+
+;いちごとメカジキの料理ってあるんだろうか
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
