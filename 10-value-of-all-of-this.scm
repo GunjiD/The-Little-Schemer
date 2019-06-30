@@ -21,6 +21,21 @@
     (cons a1
 	  (cons a2 '()))))
 
+;;add1
+(define add1
+  (lambda (n)
+    (+ n 1)))
+;;sub1
+(define sub1
+  (lambda (n)
+    (- n 1)))
+;;o+ 加算の定義
+(define o+
+  (lambda (n m)
+    (cond
+      ((zero? m) n)
+      (else (add1 (o+ n (sub1 m)))))))
+
 (define lookup-in-entry
   (lambda (name entry entry-f)
   (lookup-in-entry-help name
@@ -214,55 +229,45 @@
       ((non-primitive? fun)
        (apply-closure (second fun) vals)))))
 
+(define apply-primitive
+  (lambda (name vals)
+    (cond
+      ((eq? name 'cons)
+       (cons (first vals) (second vals)))
+      ((eq? name 'car)
+       (car (first vals)))
+      ((eq? name 'cdr)
+       (cdr (first vals)))
+      ((eq? name 'null?)
+       (null? (first vals)))
+      ((eq? name 'eq?)
+       (eq? (first vals) (second vals)))
+      ((eq? name 'atom?)
+       (_atom? (first vals)))
+      ((eq? name 'zero?)
+       (zero? (first vals)))
+      ((eq? name 'add1)
+       (add1 (first vals)))
+      ((eq? name 'sub1)
+       (sub1 (first vals)))
+      ((eq? name 'number?)
+       (number? (first vals))))))
 
+;本書の :atom? だと syntax error が発生するので _atom? に変更した
+(define _atom?
+  (lambda (x)
+    (cond
+      ((atom? x) #t)
+      ((null? x) #f)
+      ((eq? (car x) 'primitive) #t)
+      ((eq? (car x) 'non-primitive) #f)
+      (else #f))))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+(define apply-closure
+  (lambda (closure vals)
+    (meaning (body-of closure)
+	     (extend-table
+	       (new-entry
+		 (formals-of closure)
+		 vals)
+	       (table-of closure)))))
